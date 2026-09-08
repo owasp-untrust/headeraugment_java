@@ -1,7 +1,9 @@
 # Header Augmentation
 
-`HeaderAugmentation` adds restrictive response headers to Spring MVC handlers
-that serve untrusted files.
+`HeaderAugmentation` adds restrictive response headers by default to Spring MVC
+handlers that return Spring `Resource` values, including `ResponseEntity<Resource>`.
+This makes browser-served files untrusted unless they are explicitly reviewed and
+marked otherwise. JSON, HTML, and other non-resource handlers are unchanged.
 
 ## Dependency
 
@@ -19,21 +21,9 @@ applications.
 
 ## Usage
 
-```java
-import org.owasp.untrust.headeraugment.UntrustedFileResponse;
-
-@UntrustedFileResponse
-@GetMapping("/image")
-public ResponseEntity<Resource> image() {
-    // ...
-}
-```
-
-The annotation can also be placed on a controller class. Matching responses
-receive `Content-Security-Policy: sandbox; default-src 'none'; base-uri 'none';
+Responses receive `Content-Security-Policy: sandbox; default-src 'none'; base-uri 'none';
 form-action 'none'` and `X-Content-Type-Options: nosniff`. The interceptor sets
-these headers before the handler writes its response; a handler that needs a
-different security policy should not use this annotation.
+these headers before the handler writes its response.
 
 ## Trusted Browser Files
 
@@ -51,8 +41,9 @@ public ResponseEntity<Resource> logo() {
 }
 ```
 
-The annotation is an audit marker. It does not add headers or override a
-separately configured response policy.
+This annotation exempts the matching handler (or its controller class) from the
+library's default restrictive headers. It does not override a separately
+configured response policy.
 
 For local composite-build development:
 

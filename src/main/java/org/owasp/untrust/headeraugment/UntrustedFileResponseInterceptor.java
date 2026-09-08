@@ -9,6 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.ResolvableType;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -25,15 +28,19 @@ public final class UntrustedFileResponseInterceptor
             return true;
         }
 
-        boolean annotated =
+        if (!returnsResource(method)) {
+            return true;
+        }
+
+        boolean trustedForBrowser =
                 AnnotatedElementUtils.hasAnnotation(
                         method.getMethod(),
-                        UntrustedFileResponse.class)
+                        TrustedUnblockedOnBrowserFileResponse.class)
                 || AnnotatedElementUtils.hasAnnotation(
                         method.getBeanType(),
-                        UntrustedFileResponse.class);
+                        TrustedUnblockedOnBrowserFileResponse.class);
 
-        if (annotated) {
+        if (!trustedForBrowser) {
             response.setHeader(
                     "Content-Security-Policy",
                     "sandbox; default-src 'none'; base-uri 'none'; form-action 'none'");
@@ -41,5 +48,21 @@ public final class UntrustedFileResponseInterceptor
         }
 
         return true;
+    }
+
+    private boolean returnsResource(HandlerMethod method) {
+        ResolvableType returnType = ResolvableType.forMethodReturnType(method.getMethod());
+        Class<?> resolvedReturnType = returnType.resolve(Object.class);
+
+        if (Resource.class.isAssignableFrom(resolvedReturnType)) {
+            return true;
+        }
+
+        if (ResponseEntity.class.isAssignableFrom(resolvedReturnType)) {
+            Class<?> responseBodyType = returnType.getGeneric(0).resolve(Object.class);
+            return Resource.class.isAssignableFrom(responseBodyType);
+        }
+
+        return false;
     }
 }

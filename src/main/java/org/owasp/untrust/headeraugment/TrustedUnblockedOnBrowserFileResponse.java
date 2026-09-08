@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Documents that a browser-served file response was reviewed as trusted enough
- * not to require the restrictive policy applied by {@link UntrustedFileResponse}.
+ * Marks a browser-served file response as reviewed and trusted enough to be
+ * exempt from the default restrictive policy.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
